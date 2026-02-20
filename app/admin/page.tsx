@@ -26,7 +26,19 @@ export default function AdminPage() {
     fetchActivity()
   }, [])
 
+  /* Auto-refresh every 30 seconds */
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchStats()
+      fetchActivity()
+    }, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
   const fetchStats = async () => {
+    // Keep loading true only on initial load to avoid flickering
+    if (!stats.totalListings) setLoading(true)
+
     const [listingsRes, usersRes, ordersRes, paymentsRes] = await Promise.all([
       supabase.from('listings').select('id', { count: 'exact', head: true }),
       supabase.from('profiles').select('id', { count: 'exact', head: true }),
@@ -35,7 +47,7 @@ export default function AdminPage() {
     ])
 
     const totalPayments = (paymentsRes.data || []).reduce(
-      (sum: number, p: any) => sum + (p.amount || 0),
+      (sum: number, p: { amount: number | null }) => sum + (p.amount || 0),
       0
     )
 
@@ -119,8 +131,12 @@ export default function AdminPage() {
                       <Icon className="w-6 h-6" />
                     </div>
                   </div>
-                  <div className="font-display text-2xl text-brand-dark">
-                    {loading ? '...' : stat.value}
+                  <div className="font-display text-2xl text-brand-dark min-h-[32px]">
+                    {loading ? (
+                      <div className="h-8 w-24 bg-brand-dark/10 rounded animate-pulse" />
+                    ) : (
+                      stat.value
+                    )}
                   </div>
                   <div className="text-sm text-brand-dark/60">{stat.title}</div>
                 </div>
@@ -134,7 +150,17 @@ export default function AdminPage() {
               Recent Activity
             </h2>
             <div className="space-y-4">
-              {recentActivity.length === 0 && !loading ? (
+              {loading && recentActivity.length === 0 ? (
+                Array(3).fill(0).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between py-3 border-b border-brand-dark/5">
+                    <div>
+                      <div className="h-4 w-48 bg-brand-dark/10 rounded animate-pulse mb-2" />
+                      <div className="h-3 w-32 bg-brand-dark/5 rounded animate-pulse" />
+                    </div>
+                    <div className="h-3 w-16 bg-brand-dark/5 rounded animate-pulse" />
+                  </div>
+                ))
+              ) : recentActivity.length === 0 ? (
                 <div className="text-center text-brand-dark/40 py-4">
                   No recent activity
                 </div>

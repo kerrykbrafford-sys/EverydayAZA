@@ -7,19 +7,20 @@ import { supabase } from '@/lib/supabase'
 import { v4 as uuidv4 } from 'uuid'
 import toast from 'react-hot-toast'
 
-const categories = [
-  'Electronics',
-  'Fashion',
-  'Home & Garden',
-  'Sports',
-  'Beauty',
-  'Toys',
-  'Vehicles',
-  'Property',
-  'Services',
-  'Jobs',
-]
+const CATEGORIES_WITH_SUBS: Record<string, string[]> = {
+  Electronics: ['Phones & Tablets', 'Laptops & Computers', 'TVs & Audio', 'Cameras & Drones', 'Accessories', 'Other Electronics'],
+  Vehicles: ['Cars', 'Motorcycles', 'Trucks & Vans', 'Vehicle Parts', 'Boats & Watercraft', 'Other Vehicles'],
+  Property: ['Houses for Sale', 'Apartments', 'Land', 'Commercial Property', 'Short Stay / AirBnB', 'Other Property'],
+  'Home & Garden': ['Furniture', 'Home Appliances', 'Kitchen & Dining', 'Garden & Outdoor', 'Home Decor', 'Other Home'],
+  Fashion: ["Men's Clothing", "Women's Clothing", 'Shoes & Sneakers', 'Bags & Luggage', 'Jewellery & Watches', 'Other Fashion'],
+  Sports: ['Gym Equipment', 'Outdoor & Adventure', 'Team Sports', 'Cycling', 'Water Sports', 'Other Sports'],
+  Services: ['Cleaning & Maintenance', 'Repairs & Technicians', 'Transport & Delivery', 'Tutoring & Education', 'IT & Tech Services', 'Other Services'],
+  Beauty: ['Skincare', 'Hair Care', 'Makeup', 'Fragrances', 'Nail Care', 'Other Beauty'],
+  Toys: ['Baby & Toddler', 'Action Figures', 'Board Games', 'Outdoor Toys', 'Educational', 'Other Toys'],
+  Jobs: ['Full Time', 'Part Time', 'Freelance', 'Internship', 'Remote', 'Other Jobs'],
+}
 
+const ALL_CATEGORIES = Object.keys(CATEGORIES_WITH_SUBS)
 const conditions = ['New', 'Like New', 'Good', 'Fair', 'Poor']
 
 export default function CreateListingPage() {
@@ -29,20 +30,25 @@ export default function CreateListingPage() {
   const [price, setPrice] = useState('')
   const [location, setLocation] = useState('')
   const [category, setCategory] = useState('')
+  const [subCategory, setSubCategory] = useState('')
   const [condition, setCondition] = useState('')
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
 
+  const subCategories = category ? (CATEGORIES_WITH_SUBS[category] || []) : []
+
+  const handleCategoryChange = (cat: string) => {
+    setCategory(cat)
+    setSubCategory('')
+  }
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files) return
-
     const newFiles = Array.from(files)
     const combined = [...imageFiles, ...newFiles].slice(0, 5)
     setImageFiles(combined)
-
-    // Generate previews
     const previews = combined.map((file) => URL.createObjectURL(file))
     setImagePreviews(previews)
   }
@@ -54,43 +60,29 @@ export default function CreateListingPage() {
 
   const uploadImages = async (listingId: string): Promise<string[]> => {
     const urls: string[] = []
-
     for (const file of imageFiles) {
       const fileExt = file.name.split('.').pop()
       const fileName = `${listingId}/${uuidv4()}.${fileExt}`
-
-      const { error } = await supabase.storage
-        .from('listing-images')
-        .upload(fileName, file)
-
+      const { error } = await supabase.storage.from('listing-images').upload(fileName, file)
       if (!error) {
-        const { data: urlData } = supabase.storage
-          .from('listing-images')
-          .getPublicUrl(fileName)
-
+        const { data: urlData } = supabase.storage.from('listing-images').getPublicUrl(fileName)
         urls.push(urlData.publicUrl)
       }
     }
-
     return urls
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
+      const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         toast.error('Please login first')
         router.push('/login')
         return
       }
 
-      // Create listing
       const { data, error } = await supabase
         .from('listings')
         .insert({
@@ -98,6 +90,9 @@ export default function CreateListingPage() {
           description,
           price: parseFloat(price),
           location,
+          category: category || null,
+          sub_category: subCategory || null,
+          condition: condition?.toLowerCase() || null,
           user_id: user.id,
           status: 'active',
         })
@@ -106,19 +101,9 @@ export default function CreateListingPage() {
 
       if (error) throw error
 
-      // Upload images to Supabase Storage and save refs
       if (imageFiles.length > 0) {
         const imageUrls = await uploadImages(data.id)
-
-        // Insert image references into listing_images table
-        const imageInserts = imageUrls.map((url) => ({
-          listing_id: data.id,
-          image_url: url,
-        }))
-
-        if (imageInserts.length > 0) {
-          await supabase.from('listing_images').insert(imageInserts)
-        }
+        await supabase.from('listings').update({ images: imageUrls }).eq('id', data.id)
       }
 
       toast.success('Listing created successfully!')
@@ -136,20 +121,14 @@ export default function CreateListingPage() {
       <div className="max-w-3xl mx-auto px-4 py-16">
         <div className="bg-white rounded-2xl shadow-card p-8">
           <div className="mb-8">
-            <h1 className="font-display text-3xl text-brand-dark mb-2">
-              Post a Listing
-            </h1>
-            <p className="text-brand-dark/60">
-              Sell your items to buyers around the world
-            </p>
+            <h1 className="font-display text-3xl text-brand-dark mb-2">Post a Listing</h1>
+            <p className="text-brand-dark/60">Sell your items to buyers around Ghana</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Title */}
             <div>
-              <label className="block text-sm font-medium text-brand-dark mb-2">
-                Title *
-              </label>
+              <label className="block text-sm font-medium text-brand-dark mb-2">Title *</label>
               <input
                 type="text"
                 value={title}
@@ -162,9 +141,7 @@ export default function CreateListingPage() {
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-brand-dark mb-2">
-                Description *
-              </label>
+              <label className="block text-sm font-medium text-brand-dark mb-2">Description *</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -179,89 +156,96 @@ export default function CreateListingPage() {
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-brand-dark mb-2">
-                  Price (USD) *
+                  Price (GHS — ₵) *
                 </label>
-                <input
-                  type="number"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  placeholder="0.00"
-                  required
-                  min="0"
-                  step="0.01"
-                  className="w-full px-4 py-3 bg-brand-light rounded-xl border-none focus:outline-none focus:ring-2 focus:ring-brand-dark/20"
-                />
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-dark font-semibold">₵</span>
+                  <input
+                    type="number"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    placeholder="0.00"
+                    required
+                    min="0"
+                    step="0.01"
+                    className="w-full pl-8 pr-4 py-3 bg-brand-light rounded-xl border-none focus:outline-none focus:ring-2 focus:ring-brand-dark/20"
+                  />
+                </div>
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-brand-dark mb-2">
-                  Location *
-                </label>
+                <label className="block text-sm font-medium text-brand-dark mb-2">Location *</label>
                 <input
                   type="text"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  placeholder="City, Country"
+                  placeholder="e.g. Accra, Kumasi, Tamale"
                   required
                   className="w-full px-4 py-3 bg-brand-light rounded-xl border-none focus:outline-none focus:ring-2 focus:ring-brand-dark/20"
                 />
               </div>
             </div>
 
-            {/* Category & Condition */}
+            {/* Category & Sub-Category */}
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-brand-dark mb-2">
-                  Category *
-                </label>
+                <label className="block text-sm font-medium text-brand-dark mb-2">Category *</label>
                 <select
                   value={category}
-                  onChange={(e) => setCategory(e.target.value)}
+                  onChange={(e) => handleCategoryChange(e.target.value)}
                   required
                   className="w-full px-4 py-3 bg-brand-light rounded-xl border-none focus:outline-none focus:ring-2 focus:ring-brand-dark/20"
                 >
                   <option value="">Select category</option>
-                  {categories.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
+                  {ALL_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-brand-dark mb-2">
-                  Condition *
+                  Sub-Category
                 </label>
                 <select
-                  value={condition}
-                  onChange={(e) => setCondition(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 bg-brand-light rounded-xl border-none focus:outline-none focus:ring-2 focus:ring-brand-dark/20"
+                  value={subCategory}
+                  onChange={(e) => setSubCategory(e.target.value)}
+                  disabled={subCategories.length === 0}
+                  className="w-full px-4 py-3 bg-brand-light rounded-xl border-none focus:outline-none focus:ring-2 focus:ring-brand-dark/20 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  <option value="">Select condition</option>
-                  {conditions.map((cond) => (
-                    <option key={cond} value={cond}>
-                      {cond}
-                    </option>
+                  <option value="">
+                    {category ? `All ${category}` : 'Select a category first'}
+                  </option>
+                  {subCategories.map((sub) => (
+                    <option key={sub} value={sub}>{sub}</option>
                   ))}
                 </select>
               </div>
+            </div>
+
+            {/* Condition */}
+            <div>
+              <label className="block text-sm font-medium text-brand-dark mb-2">Condition *</label>
+              <select
+                value={condition}
+                onChange={(e) => setCondition(e.target.value)}
+                required
+                className="w-full px-4 py-3 bg-brand-light rounded-xl border-none focus:outline-none focus:ring-2 focus:ring-brand-dark/20"
+              >
+                <option value="">Select condition</option>
+                {conditions.map((cond) => (
+                  <option key={cond} value={cond}>{cond}</option>
+                ))}
+              </select>
             </div>
 
             {/* Images */}
             <div>
               <label className="block text-sm font-medium text-brand-dark mb-2">
-                Images (up to 5) — uploaded to Supabase Storage
+                Images (up to 5)
               </label>
               <div className="grid grid-cols-5 gap-4">
                 {imagePreviews.map((img, index) => (
                   <div key={index} className="relative aspect-square">
-                    <img
-                      src={img}
-                      alt={`Upload ${index + 1}`}
-                      className="w-full h-full object-cover rounded-xl"
-                    />
+                    <img src={img} alt={`Upload ${index + 1}`} className="w-full h-full object-cover rounded-xl" />
                     <button
                       type="button"
                       onClick={() => removeImage(index)}
@@ -275,13 +259,7 @@ export default function CreateListingPage() {
                   <label className="aspect-square flex flex-col items-center justify-center bg-brand-light rounded-xl cursor-pointer hover:bg-brand-dark/5 transition-colors border-2 border-dashed border-brand-dark/20">
                     <Upload className="w-8 h-8 text-brand-dark/40 mb-2" />
                     <span className="text-xs text-brand-dark/60">Add Photo</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
+                    <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
                   </label>
                 )}
               </div>

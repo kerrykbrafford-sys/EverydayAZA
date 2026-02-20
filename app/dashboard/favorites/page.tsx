@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase'
 import type { Listing } from '@/types'
 
 export default function DashboardFavoritesPage() {
-    const [favorites, setFavorites] = useState<(Listing & { favorite_id: string })[]>([])
+    const [favorites, setFavorites] = useState<(Listing & { favorite_listing_id: string })[]>([])
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -27,7 +27,7 @@ export default function DashboardFavoritesPage() {
 
         const { data } = await supabase
             .from('favorites')
-            .select('id, listing_id, listings(*)')
+            .select('user_id, listing_id, listings(*)')
             .eq('user_id', user.id)
 
         if (data) {
@@ -35,16 +35,18 @@ export default function DashboardFavoritesPage() {
                 .filter((f: any) => f.listings)
                 .map((f: any) => ({
                     ...f.listings,
-                    favorite_id: f.id,
+                    favorite_listing_id: f.listing_id,
                 }))
             setFavorites(mapped)
         }
         setLoading(false)
     }
 
-    const removeFavorite = async (favoriteId: string) => {
-        await supabase.from('favorites').delete().eq('id', favoriteId)
-        setFavorites((prev) => prev.filter((f) => f.favorite_id !== favoriteId))
+    const removeFavorite = async (listingId: string) => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+        await supabase.from('favorites').delete().eq('user_id', user.id).eq('listing_id', listingId)
+        setFavorites((prev) => prev.filter((f) => f.favorite_listing_id !== listingId))
     }
 
     return (
@@ -92,7 +94,7 @@ export default function DashboardFavoritesPage() {
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {favorites.map((listing) => (
                             <div
-                                key={listing.favorite_id}
+                                key={listing.favorite_listing_id}
                                 className="group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-300"
                             >
                                 <Link href={`/listing/${listing.id}`}>
@@ -118,10 +120,10 @@ export default function DashboardFavoritesPage() {
                                     )}
                                     <div className="flex items-center justify-between">
                                         <span className="text-xl font-semibold text-brand-dark">
-                                            ${listing.price?.toLocaleString() || '0'}
+                                            ₵{listing.price?.toLocaleString() || '0'}
                                         </span>
                                         <button
-                                            onClick={() => removeFavorite(listing.favorite_id)}
+                                            onClick={() => removeFavorite(listing.favorite_listing_id)}
                                             className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center hover:bg-red-100 transition-colors"
                                             title="Remove from favorites"
                                         >

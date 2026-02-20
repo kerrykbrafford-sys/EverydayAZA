@@ -2,10 +2,11 @@ import type { Metadata } from 'next'
 import './globals.css'
 import Navbar from '@/components/Navbar'
 import { Toaster } from 'react-hot-toast'
+import NextTopLoader from 'nextjs-toploader'
 
 export const metadata: Metadata = {
-  title: 'RecWorld - Global Marketplace & Import Sourcing',
-  description: 'Buy and sell locally, request products internationally, and track your imports with RecWorld.',
+  title: 'EverydayAZA - Marketplace & Global Sourcing',
+  description: "Ghana's premier marketplace and global import sourcing platform. Buy, sell, and import from worldwide suppliers with air and sea shipping.",
 }
 
 export default function RootLayout({
@@ -16,6 +17,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
+        <NextTopLoader color="#D4AF37" showSpinner={false} />
         <Toaster position="top-right" />
         <Navbar />
         {children}

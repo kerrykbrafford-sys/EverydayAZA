@@ -1,130 +1,328 @@
-// ─── Profiles ────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// EverydayAZA — Comprehensive Type Definitions
+// Covers all 15 database tables + helper utilities
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─── Shared ──────────────────────────────────────────────────────────────────
+
+/** ISO 8601 timestamp string from Supabase */
+export type Timestamp = string
+
+/** UUID string */
+export type UUID = string
+
+/** Nullable database column */
+export type Nullable<T> = T | null
+
+// ─── Profiles ────────────────────────────────────────────────────────────────
+
+export type UserRole = 'user' | 'admin' | 'banned'
+
 export interface Profile {
-  id: string
-  full_name: string | null
-  avatar_url: string | null
-  phone: string | null
-  role: 'user' | 'admin' | 'banned'
-  created_at: string
+  id: UUID
+  full_name: Nullable<string>
+  email?: Nullable<string>
+  avatar_url: Nullable<string>
+  phone: Nullable<string>
+  location: Nullable<string>
+  role: UserRole
+  created_at: Timestamp
+  updated_at?: Timestamp
 }
 
-// ─── Categories ──────────────────────────────────
+// ─── Categories ──────────────────────────────────────────────────────────────
+
 export interface Category {
-  id: string
+  id: UUID
   name: string
   slug: string
-  created_at: string
+  description?: Nullable<string>
+  icon?: Nullable<string>
+  parent_id?: Nullable<UUID>
+  listing_count?: number
+  created_at: Timestamp
 }
 
-// ─── Listings ────────────────────────────────────
+// ─── Listings ────────────────────────────────────────────────────────────────
+
+export type ListingStatus = 'active' | 'sold' | 'removed' | 'flagged' | 'draft'
+export type ListingCondition = 'new' | 'like_new' | 'used' | 'refurbished'
+
 export interface Listing {
-  id: string
-  user_id: string
+  id: UUID
+  user_id: UUID
   title: string
-  description: string | null
-  price: number | null
-  category_id: string | null
-  location: string | null
-  status: 'active' | 'sold' | 'removed'
-  created_at: string
-  // joined fields (optional)
+  description: Nullable<string>
+  price: Nullable<number>
+  negotiable?: boolean
+  category_id: Nullable<UUID>
+  category?: Nullable<string>
+  location: Nullable<string>
+  condition: Nullable<ListingCondition>
+  status: ListingStatus
+  moderation_reason?: Nullable<string>
+  views?: number
+  created_at: Timestamp
+  updated_at?: Timestamp
+  // Joined fields
   images?: string[]
-  category?: string
-  condition?: string
   listing_images?: ListingImage[]
   profiles?: Profile
+  categories?: Category
 }
 
-// ─── Listing Images ──────────────────────────────
 export interface ListingImage {
-  id: string
-  listing_id: string
+  id: UUID
+  listing_id: UUID
   image_url: string
+  display_order?: number
+  created_at?: Timestamp
 }
 
-// ─── Favorites ───────────────────────────────────
+// ─── Favorites ───────────────────────────────────────────────────────────────
+
 export interface Favorite {
-  id: string
-  user_id: string
-  listing_id: string
+  id: UUID
+  user_id: UUID
+  listing_id: UUID
+  created_at: Timestamp
+  // Joined fields
+  listings?: Listing
 }
 
-// ─── Conversations ───────────────────────────────
+// ─── Conversations & Messages ─────────────────────────────────────────────────
+
 export interface Conversation {
-  id: string
-  created_at: string
+  id: UUID
+  listing_id: UUID
+  buyer_id: UUID
+  seller_id: UUID
+  last_message_at: Nullable<Timestamp>
+  created_at: Timestamp
+  // Joined fields
+  listings?: Pick<Listing, 'id' | 'title' | 'price' | 'images'>
+  buyer?: Profile
+  seller?: Profile
+  messages?: Message[]
+  last_message?: string
+  unread_count?: number
 }
 
-export interface ConversationParticipant {
-  id: string
-  conversation_id: string
-  user_id: string
-}
-
-// ─── Messages ────────────────────────────────────
 export interface Message {
-  id: string
-  conversation_id: string
-  sender_id: string
+  id: UUID
+  conversation_id: UUID
+  sender_id: UUID
   content: string
-  created_at: string
+  read: boolean
+  created_at: Timestamp
+  // Joined fields
+  sender?: Profile
 }
 
-// ─── Import Requests ─────────────────────────────
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+export interface Notification {
+  id: UUID
+  user_id: UUID
+  type: 'new_message' | 'order_update' | 'quote_ready' | 'listing_flagged' | string
+  title: string
+  body: Nullable<string>
+  metadata?: Record<string, unknown>
+  read: boolean
+  created_at: Timestamp
+}
+
+// ─── Import System ────────────────────────────────────────────────────────────
+
+export type ImportRequestStatus =
+  | 'pending'
+  | 'ai_sourcing'
+  | 'finding_supplier'
+  | 'quoted'
+  | 'approved'
+  | 'rejected'
+  | 'paid'
+  | 'processing'
+  | 'shipped'
+  | 'delivered'
+
+export type ShippingMethod = 'air_freight' | 'sea_freight' | 'express'
+
 export interface ImportRequest {
-  id: string
-  user_id: string
-  product_name: string | null
-  description: string | null
-  reference_image_url: string | null
-  product_url: string | null
-  quantity: number | null
-  shipping_method: string | null
-  status: 'pending' | 'quoted' | 'approved' | 'rejected' | 'paid' | 'shipped' | 'delivered'
-  created_at: string
+  id: UUID
+  user_id: UUID
+  title: Nullable<string>
+  product_name?: Nullable<string>
+  description: Nullable<string>
+  reference_image_url: Nullable<string>
+  product_url: Nullable<string>
+  quantity: Nullable<number>
+  destination_country?: Nullable<string>
+  preferred_shipping: Nullable<ShippingMethod>
+  status: ImportRequestStatus
+  ai_processed?: boolean
+  created_at: Timestamp
+  // Joined fields
   profiles?: Profile
+  import_quotes?: ImportQuote[]
 }
 
-// ─── Import Quotes ───────────────────────────────
+export interface Supplier {
+  name: string
+  country: string
+  flag: string
+  rating?: number
+}
+
 export interface ImportQuote {
-  id: string
-  request_id: string
-  product_cost: number | null
-  shipping_cost: number | null
-  service_fee: number | null
-  total_cost: number | null
-  estimated_days: number | null
-  created_at: string
+  id: UUID
+  request_id: UUID
+  supplier_name?: Nullable<string>
+  supplier_country?: Nullable<string>
+  product_cost: Nullable<number>
+  shipping_cost: Nullable<number>
+  service_fee: Nullable<number>
+  total_cost: Nullable<number>
+  delivery_days: Nullable<number>
+  /** @deprecated Use delivery_days */
+  estimated_days?: Nullable<number>
+  currency?: string
+  notes?: Nullable<string>
+  expires_at?: Nullable<Timestamp>
+  created_at: Timestamp
+  // Joined fields
+  import_requests?: ImportRequest
 }
 
-// ─── Import Orders ───────────────────────────────
+export type OrderShippingStatus =
+  | 'payment_confirmed'
+  | 'order_placed'
+  | 'processing'
+  | 'dispatched'
+  | 'in_transit'
+  | 'customs_clearance'
+  | 'arrived_country'
+  | 'out_for_delivery'
+  | 'delivered'
+
 export interface ImportOrder {
-  id: string
-  user_id: string
-  quote_id: string
-  tracking_number: string | null
-  status: 'pending' | 'processing' | 'in_transit' | 'delivered'
-  created_at: string
+  id: UUID
+  user_id: UUID
+  quote_id: UUID
+  tracking_number: Nullable<string>
+  shipping_status: Nullable<OrderShippingStatus>
+  payment_status?: 'pending' | 'paid' | 'failed'
+  estimated_delivery?: Nullable<Timestamp>
+  delivered_at?: Nullable<Timestamp>
+  created_at: Timestamp
+  // Joined fields
   import_quotes?: ImportQuote
   profiles?: Profile
+  import_tracking_events?: ImportTrackingEvent[]
 }
 
-// ─── Payments ────────────────────────────────────
+export interface ImportTrackingEvent {
+  id: UUID
+  order_id: UUID
+  status: OrderShippingStatus
+  description: Nullable<string>
+  created_at: Timestamp
+}
+
+// ─── Payments ────────────────────────────────────────────────────────────────
+
+export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded'
+export type PaymentProvider = 'paystack' | 'flutterwave' | 'manual'
+
 export interface Payment {
-  id: string
-  user_id: string
-  amount: number | null
-  status: string | null
-  created_at: string
+  id: UUID
+  user_id: UUID
+  order_id?: Nullable<UUID>
+  reference: Nullable<string>
+  amount: Nullable<number>
+  currency?: string
+  provider?: PaymentProvider
+  status: PaymentStatus
+  paid_at?: Nullable<Timestamp>
+  metadata?: Record<string, unknown>
+  created_at: Timestamp
 }
 
-// ─── Promotions ──────────────────────────────────
+// ─── Moderation ──────────────────────────────────────────────────────────────
+
+export type ReportReason =
+  | 'scam'
+  | 'spam'
+  | 'prohibited_item'
+  | 'counterfeit'
+  | 'inappropriate'
+  | 'other'
+
+export interface Report {
+  id: UUID
+  reporter_id: UUID
+  target_id: UUID
+  target_type: 'listing' | 'user' | 'message'
+  reason: ReportReason
+  description: Nullable<string>
+  status: 'open' | 'reviewed' | 'dismissed'
+  created_at: Timestamp
+}
+
+export interface AdminAction {
+  id: UUID
+  admin_id?: Nullable<UUID>
+  action_type: 'ban_user' | 'remove_listing' | 'approve_import' | 'auto_flag' | string
+  target_id: UUID
+  target_type: 'user' | 'listing' | 'import' | string
+  reason: Nullable<string>
+  created_at: Timestamp
+}
+
+// ─── Promotions ──────────────────────────────────────────────────────────────
+
 export interface Promotion {
-  id: string
-  listing_id: string
-  type: string | null
-  expires_at: string | null
+  id: UUID
+  listing_id: UUID
+  type: 'featured' | 'spotlight' | 'top' | string | null
+  starts_at?: Nullable<Timestamp>
+  expires_at: Nullable<Timestamp>
+  created_at?: Timestamp
 }
 
-// ─── Legacy compat aliases ───────────────────────
+// ─── Legacy compat aliases ────────────────────────────────────────────────────
+
+/** @deprecated Use Profile instead */
 export type User = Profile
+
+/** @deprecated Use ConversationParticipant from conversations table */
+export interface ConversationParticipant {
+  id: UUID
+  conversation_id: UUID
+  user_id: UUID
+}
+
+// ─── Supabase Database type map (for typed queries) ───────────────────────────
+
+export interface Database {
+  public: {
+    Tables: {
+      profiles:               { Row: Profile }
+      categories:             { Row: Category }
+      listings:               { Row: Listing }
+      listing_images:         { Row: ListingImage }
+      favorites:              { Row: Favorite }
+      conversations:          { Row: Conversation }
+      messages:               { Row: Message }
+      notifications:          { Row: Notification }
+      import_requests:        { Row: ImportRequest }
+      import_quotes:          { Row: ImportQuote }
+      import_orders:          { Row: ImportOrder }
+      import_tracking_events: { Row: ImportTrackingEvent }
+      payments:               { Row: Payment }
+      reports:                { Row: Report }
+      admin_actions:          { Row: AdminAction }
+      promotions:             { Row: Promotion }
+    }
+  }
+}

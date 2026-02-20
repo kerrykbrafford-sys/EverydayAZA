@@ -130,7 +130,7 @@ export default function DashboardListingsPage() {
                                         </h3>
                                         <div className="flex items-center gap-3 mt-1">
                                             <span className="text-brand-dark font-medium">
-                                                ${listing.price?.toLocaleString() || '0'}
+                                                ₵{listing.price?.toLocaleString() || '0'}
                                             </span>
                                             {listing.location && (
                                                 <span className="flex items-center gap-1 text-sm text-brand-dark/40">

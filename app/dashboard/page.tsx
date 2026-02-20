@@ -5,7 +5,7 @@ import Link from 'next/link'
 import {
   Package,
   Heart,
-  MessageCircle,
+  Inbox,
   Globe,
   ArrowRight,
   TrendingUp,
@@ -28,10 +28,10 @@ const dashboardItems = [
     color: 'bg-red-50',
   },
   {
-    title: 'Messages',
-    description: 'Chat with buyers & sellers',
-    icon: MessageCircle,
-    href: '/dashboard/messages',
+    title: 'Import Requests',
+    description: 'Items you requested to import',
+    icon: Inbox,
+    href: '/dashboard/import-orders',
     color: 'bg-green-50',
   },
   {
@@ -59,17 +59,17 @@ export default function DashboardPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const [listingsRes, favoritesRes, messagesRes, ordersRes] = await Promise.all([
+    const [listingsRes, favoritesRes, importRequestsRes, ordersRes] = await Promise.all([
       supabase.from('listings').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
       supabase.from('favorites').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
-      supabase.from('messages').select('id', { count: 'exact', head: true }).eq('sender_id', user.id),
+      supabase.from('import_requests').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
       supabase.from('import_orders').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
     ])
 
     setCounts({
       listings: listingsRes.count || 0,
       favorites: favoritesRes.count || 0,
-      messages: messagesRes.count || 0,
+      messages: importRequestsRes.count || 0,
       importOrders: ordersRes.count || 0,
     })
   }
@@ -114,11 +114,11 @@ export default function DashboardPage() {
           <div className="bg-white rounded-2xl p-6 shadow-card">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
-                <MessageCircle className="w-6 h-6 text-green-600" />
+                <Inbox className="w-6 h-6 text-green-600" />
               </div>
             </div>
             <div className="font-display text-2xl text-brand-dark">{counts.messages}</div>
-            <div className="text-sm text-brand-dark/60">Messages</div>
+            <div className="text-sm text-brand-dark/60">Import Requests</div>
           </div>
 
           <div className="bg-white rounded-2xl p-6 shadow-card">

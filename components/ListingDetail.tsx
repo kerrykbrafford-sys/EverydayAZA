@@ -21,6 +21,7 @@ interface ListingDetailProps {
 
 export default function ListingDetail({ listing }: ListingDetailProps) {
   const [selectedImage, setSelectedImage] = useState(0)
+  const [imgError, setImgError] = useState(false)
 
   return (
     <main className="min-h-screen bg-brand-light pt-20">
@@ -37,11 +38,12 @@ export default function ListingDetail({ listing }: ListingDetailProps) {
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Images */}
           <div className="space-y-4">
-            <div className="aspect-square bg-white rounded-2xl overflow-hidden shadow-card">
+            <div className="aspect-square bg-white rounded-2xl overflow-hidden shadow-card relative">
               <img
-                src={listing.images?.[selectedImage] || '/images/product-1.jpg'}
+                src={!imgError ? (listing.images?.[selectedImage] || '/images/product-1.jpg') : 'https://placehold.co/600x600?text=No+Image'}
                 alt={listing.title}
                 className="w-full h-full object-cover"
+                onError={() => setImgError(true)}
               />
             </div>
             {listing.images && listing.images.length > 1 && (
@@ -49,17 +51,22 @@ export default function ListingDetail({ listing }: ListingDetailProps) {
                 {listing.images.map((img, index) => (
                   <button
                     key={index}
-                    onClick={() => setSelectedImage(index)}
-                    className={`w-20 h-20 rounded-xl overflow-hidden ${
-                      selectedImage === index
-                        ? 'ring-2 ring-brand-dark'
-                        : 'opacity-60'
-                    }`}
+                    onClick={() => {
+                      setSelectedImage(index)
+                      setImgError(false)
+                    }}
+                    className={`w-20 h-20 rounded-xl overflow-hidden ${selectedImage === index
+                      ? 'ring-2 ring-brand-dark'
+                      : 'opacity-60'
+                      }`}
                   >
                     <img
                       src={img}
                       alt={`${listing.title} ${index + 1}`}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://placehold.co/100x100?text=?'
+                      }}
                     />
                   </button>
                 ))}
@@ -80,7 +87,7 @@ export default function ListingDetail({ listing }: ListingDetailProps) {
                 {listing.title}
               </h1>
               <div className="text-3xl font-bold text-brand-dark">
-                ${listing.price.toLocaleString()}
+                ₵{listing.price?.toLocaleString() || '0.00'}
               </div>
             </div>
 
@@ -101,11 +108,19 @@ export default function ListingDetail({ listing }: ListingDetailProps) {
             {/* Seller Info */}
             <div className="bg-white rounded-2xl p-6 shadow-card">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-brand-dark rounded-full flex items-center justify-center">
-                  <span className="text-white font-display text-xl">J</span>
+                <div className="w-14 h-14 bg-brand-dark rounded-full flex items-center justify-center overflow-hidden">
+                  {listing.profiles?.avatar_url ? (
+                    <img src={listing.profiles.avatar_url} alt="Seller" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-white font-display text-xl">
+                      {listing.profiles?.full_name?.[0]?.toUpperCase() || 'U'}
+                    </span>
+                  )}
                 </div>
                 <div>
-                  <div className="font-medium text-brand-dark">John Doe</div>
+                  <div className="font-medium text-brand-dark">
+                    {listing.profiles?.full_name || 'Unknown Seller'}
+                  </div>
                   <div className="flex items-center gap-1 text-sm text-brand-dark/60">
                     <Star className="w-4 h-4 fill-brand-gold text-brand-gold" />
                     4.8 (24 reviews)

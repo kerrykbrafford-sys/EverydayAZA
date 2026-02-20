@@ -14,9 +14,11 @@ import {
   MessageCircle,
   ArrowLeft,
   Loader2,
+  Sparkles,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type { Listing } from '@/types'
+import PromoteListingModal from '@/components/payments/PromoteListingModal'
 
 export default function ListingPage() {
   const params = useParams()
@@ -25,6 +27,8 @@ export default function ListingPage() {
   const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState(0)
   const [isFavorite, setIsFavorite] = useState(false)
+  const [showPromote, setShowPromote] = useState(false)
+  const [isOwner, setIsOwner] = useState(false)
 
   useEffect(() => {
     fetchListing()
@@ -42,6 +46,10 @@ export default function ListingPage() {
     if (data) {
       const images = data.listing_images?.map((img: any) => img.image_url) || []
       setListing({ ...data, images: images.length > 0 ? images : ['/images/product-1.jpg'] })
+
+      // Check if current user owns this listing
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user && data.user_id === user.id) setIsOwner(true)
     }
     setLoading(false)
   }
@@ -126,8 +134,8 @@ export default function ListingPage() {
                     key={index}
                     onClick={() => setSelectedImage(index)}
                     className={`w-20 h-20 rounded-xl overflow-hidden ${selectedImage === index
-                        ? 'ring-2 ring-brand-dark'
-                        : 'opacity-60'
+                      ? 'ring-2 ring-brand-dark'
+                      : 'opacity-60'
                       }`}
                   >
                     <img
@@ -158,7 +166,7 @@ export default function ListingPage() {
                 {listing.title}
               </h1>
               <div className="text-3xl font-bold text-brand-dark">
-                ${listing.price?.toLocaleString() || '0'}
+                ₵{listing.price?.toLocaleString() || '0'}
               </div>
             </div>
 
@@ -171,14 +179,14 @@ export default function ListingPage() {
               <button
                 onClick={toggleFavorite}
                 className={`w-14 h-14 rounded-xl flex items-center justify-center transition-colors ${isFavorite
-                    ? 'bg-red-50 hover:bg-red-100'
-                    : 'bg-brand-light hover:bg-brand-gold/20'
+                  ? 'bg-red-50 hover:bg-red-100'
+                  : 'bg-brand-light hover:bg-brand-gold/20'
                   }`}
               >
                 <Heart
                   className={`w-6 h-6 ${isFavorite
-                      ? 'fill-red-500 text-red-500'
-                      : 'text-brand-dark'
+                    ? 'fill-red-500 text-red-500'
+                    : 'text-brand-dark'
                     }`}
                 />
               </button>
@@ -228,6 +236,17 @@ export default function ListingPage() {
               </p>
             </div>
 
+            {/* Promote (owner only) */}
+            {isOwner && (
+              <button
+                onClick={() => setShowPromote(true)}
+                className="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-white rounded-xl font-medium hover:from-amber-600 hover:to-yellow-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25"
+              >
+                <Sparkles className="w-5 h-5" />
+                Promote This Listing
+              </button>
+            )}
+
             {/* Report */}
             <button className="flex items-center gap-2 text-sm text-brand-dark/40 hover:text-red-500 transition-colors">
               <Flag className="w-4 h-4" />
@@ -235,6 +254,14 @@ export default function ListingPage() {
             </button>
           </div>
         </div>
+
+        {/* Promote Modal */}
+        <PromoteListingModal
+          listingId={id}
+          listingTitle={listing.title}
+          isOpen={showPromote}
+          onClose={() => setShowPromote(false)}
+        />
       </div>
     </main>
   )

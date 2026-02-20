@@ -9,6 +9,7 @@ import {
   Users,
   MessageSquare,
   Settings,
+  DollarSign,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -17,6 +18,7 @@ const navItems = [
   { href: '/admin/import-requests', label: 'Import Requests', icon: Globe },
   { href: '/admin/listings', label: 'Listings', icon: Package },
   { href: '/admin/orders', label: 'Orders', icon: Package },
+  { href: '/admin/payments', label: 'Payments', icon: DollarSign },
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/admin/messages', label: 'Messages', icon: MessageSquare },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
