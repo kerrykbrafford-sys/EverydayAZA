@@ -48,8 +48,8 @@ function LoginContent() {
       if (error) throw error
       const { data: profile } = await supabase
         .from('profiles').select('role').eq('id', authData.user.id).single()
-      router.push(profile?.role === 'admin' ? '/admin' : redirectTo)
       router.refresh()
+      router.push(profile?.role === 'admin' ? '/admin' : redirectTo)
     } catch (err: any) {
       setError(err.message || 'Failed to login')
     } finally {
@@ -64,7 +64,7 @@ function LoginContent() {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: `${window.location.origin}/dashboard` },
+        options: { redirectTo: `${window.location.origin}/auth/callback?next=${redirectTo}` },
       })
       if (error) throw error
     } catch (err: any) {
@@ -97,8 +97,8 @@ function LoginContent() {
     try {
       const { error } = await supabase.auth.verifyOtp({ phone, token: otp, type: 'sms' })
       if (error) throw error
-      router.push(redirectTo)
       router.refresh()
+      router.push(redirectTo)
     } catch (err: any) {
       setError(err.message || 'Invalid OTP')
     } finally {

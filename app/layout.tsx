@@ -19,7 +19,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <NextTopLoader color="#D4AF37" showSpinner={false} />
+        <NextTopLoader color="#D4AF37" shadow={false} showSpinner={false} height={3} />
         <Toaster position="top-right" />
         <Navbar />
         {children}
