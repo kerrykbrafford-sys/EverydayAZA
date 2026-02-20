@@ -1,6 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+export const runtime = 'edge'
+
 export async function middleware(request: NextRequest) {
     let supabaseResponse = NextResponse.next({ request })
 
@@ -11,7 +13,7 @@ export async function middleware(request: NextRequest) {
             cookies: {
                 getAll() { return request.cookies.getAll() },
                 setAll(cookiesToSet) {
-                    cookiesToSet.forEach(({ name, value, options }) =>
+                    cookiesToSet.forEach(({ name, value }) =>
                         request.cookies.set(name, value)
                     )
                     supabaseResponse = NextResponse.next({ request })
@@ -35,7 +37,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // Authenticated-only routes
-    const protectedPaths = ['/dashboard', '/profile', '/import-request']
+    const protectedPaths = ['/dashboard', '/profile', '/import-request', '/checkout', '/listing/create']
     const adminPaths = ['/admin']
 
     const isProtected = protectedPaths.some(p => path.startsWith(p))
@@ -72,5 +74,7 @@ export const config = {
         '/admin/:path*',
         '/profile/:path*',
         '/import-request',
+        '/checkout',
+        '/listing/create',
     ],
 }

@@ -59,7 +59,7 @@ export async function POST(req: Request) {
                     amount: Math.round(amount * 100), // Paystack expects amount in pesewas/kobo
                     currency,
                     reference: payment.id, // Use our payment ID as the reference
-                    callback_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/payment-success`,
+                    callback_url: `${process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')}/payment-success`,
                     metadata: {
                         payment_id: payment.id,
                         type,
