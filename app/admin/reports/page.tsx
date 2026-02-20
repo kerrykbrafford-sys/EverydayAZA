@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect } from 'react'
 import {
     Flag, AlertTriangle, Search, CheckCircle, XCircle, Eye, ChevronDown

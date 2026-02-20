@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import AdminGuard from '@/components/AdminGuard'
 
 export default function AdminLayout({

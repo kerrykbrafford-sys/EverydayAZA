@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Search, SlidersHorizontal, ChevronDown, X, Grid2X2, List } from 'lucide-react'

@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import ImportRequestForm from '@/components/ImportRequestForm'
 
 export default function ImportRequestPage() {

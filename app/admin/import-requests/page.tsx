@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect } from 'react'
 import { Plane, Ship, X, Eye, ArrowRight, Loader2 } from 'lucide-react'
 import AdminSidebar from '@/components/AdminSidebar'
