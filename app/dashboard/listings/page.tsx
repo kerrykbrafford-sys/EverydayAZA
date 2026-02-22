@@ -4,15 +4,7 @@ export const dynamic = 'force-dynamic'
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import {
-    ArrowLeft,
-    Package,
-    Edit,
-    Trash2,
-    Eye,
-    Plus,
-    MapPin,
-} from 'lucide-react'
+import { Package, Edit, Trash2, Eye, Plus, MapPin, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type { Listing } from '@/types'
 
@@ -59,117 +51,59 @@ export default function DashboardListingsPage() {
     }
 
     return (
-        <main className="min-h-screen bg-brand-light pt-20">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-4">
-                        <Link
-                            href="/dashboard"
-                            className="w-10 h-10 bg-white rounded-lg flex items-center justify-center hover:bg-brand-dark/5 transition-colors"
-                        >
-                            <ArrowLeft className="w-5 h-5 text-brand-dark" />
-                        </Link>
-                        <div>
-                            <h1 className="font-display text-3xl text-brand-dark">
-                                My Listings
-                            </h1>
-                            <p className="text-brand-dark/60">
-                                Manage your posted items
-                            </p>
-                        </div>
-                    </div>
-                    <Link
-                        href="/listing/create"
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-brand-dark text-white rounded-xl hover:bg-brand-dark/90 transition-colors"
-                    >
-                        <Plus className="w-5 h-5" />
-                        New Listing
+        <div className="max-w-4xl mx-auto">
+            <div className="flex items-center justify-between mb-6">
+                <div>
+                    <h1 className="font-display text-2xl text-brand-dark">My Listings</h1>
+                    <p className="text-sm text-brand-dark/50 mt-0.5">Manage your posted items</p>
+                </div>
+                <Link href="/listing/create" className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-dark text-white rounded-xl text-sm hover:bg-brand-dark/90 transition-colors">
+                    <Plus className="w-4 h-4" /> New Listing
+                </Link>
+            </div>
+
+            {loading ? (
+                <div className="flex items-center justify-center py-20">
+                    <Loader2 className="w-8 h-8 animate-spin text-brand-dark/30" />
+                </div>
+            ) : listings.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-brand-dark/8 p-16 text-center">
+                    <Package className="w-14 h-14 text-brand-dark/10 mx-auto mb-4" />
+                    <h3 className="font-display text-xl text-brand-dark mb-2">No Listings Yet</h3>
+                    <p className="text-brand-dark/50 mb-6">Start selling by posting your first item</p>
+                    <Link href="/listing/create" className="inline-flex items-center gap-2 px-6 py-3 bg-brand-dark text-white rounded-xl text-sm hover:bg-brand-dark/90 transition-colors">
+                        <Plus className="w-4 h-4" /> Post First Listing
                     </Link>
                 </div>
-
-                {loading ? (
-                    <div className="bg-white rounded-2xl shadow-card p-12 text-center text-brand-dark/40">
-                        Loading your listings...
-                    </div>
-                ) : listings.length === 0 ? (
-                    <div className="bg-white rounded-2xl shadow-card p-12 text-center">
-                        <div className="w-20 h-20 bg-brand-light rounded-full flex items-center justify-center mx-auto mb-6">
-                            <Package className="w-10 h-10 text-brand-dark/40" />
-                        </div>
-                        <h2 className="font-display text-2xl text-brand-dark mb-2">
-                            No Listings Yet
-                        </h2>
-                        <p className="text-brand-dark/60 mb-6">
-                            Start selling by posting your first item
-                        </p>
-                        <Link
-                            href="/listing/create"
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-brand-dark text-white rounded-full hover:bg-brand-dark/90 transition-colors"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Post Your First Listing
-                        </Link>
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                        {listings.map((listing) => (
-                            <div
-                                key={listing.id}
-                                className="bg-white rounded-2xl shadow-card p-6 flex items-center justify-between"
-                            >
-                                <div className="flex items-center gap-4">
-                                    <div className="w-16 h-16 bg-brand-light rounded-xl overflow-hidden">
-                                        <img
-                                            src={listing.images?.[0] || '/images/product-1.jpg'}
-                                            alt={listing.title}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-display text-lg text-brand-dark">
-                                            {listing.title}
-                                        </h3>
-                                        <div className="flex items-center gap-3 mt-1">
-                                            <span className="text-brand-dark font-medium">
-                                                ₵{listing.price?.toLocaleString() || '0'}
-                                            </span>
-                                            {listing.location && (
-                                                <span className="flex items-center gap-1 text-sm text-brand-dark/40">
-                                                    <MapPin className="w-3 h-3" />
-                                                    {listing.location}
-                                                </span>
-                                            )}
-                                            <span
-                                                className={`px-2 py-0.5 rounded-full text-xs ${statusColors[listing.status] || statusColors.active
-                                                    }`}
-                                            >
-                                                {listing.status}
-                                            </span>
-                                        </div>
-                                    </div>
+            ) : (
+                <div className="space-y-3">
+                    {listings.map((listing) => (
+                        <div key={listing.id} className="bg-white rounded-2xl border border-brand-dark/8 p-5 flex items-center justify-between hover:border-brand-dark/20 transition-all">
+                            <div className="flex items-center gap-4 flex-1 min-w-0">
+                                <div className="w-14 h-14 bg-brand-light rounded-xl overflow-hidden flex-shrink-0">
+                                    <img src={listing.images?.[0] || '/images/product-1.jpg'} alt={listing.title} className="w-full h-full object-cover" />
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <Link
-                                        href={`/listing/${listing.id}`}
-                                        className="w-10 h-10 bg-brand-light rounded-lg flex items-center justify-center hover:bg-brand-dark/5 transition-colors"
-                                        title="View"
-                                    >
-                                        <Eye className="w-5 h-5 text-brand-dark" />
-                                    </Link>
-                                    <button
-                                        onClick={() => deleteListing(listing.id)}
-                                        className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center hover:bg-red-100 transition-colors"
-                                        title="Delete"
-                                    >
-                                        <Trash2 className="w-5 h-5 text-red-500" />
-                                    </button>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="font-medium text-brand-dark truncate">{listing.title}</h3>
+                                    <div className="flex items-center gap-3 mt-1">
+                                        <span className="text-sm font-display text-brand-gold">₵{listing.price?.toLocaleString() || '0'}</span>
+                                        {listing.location && <span className="flex items-center gap-1 text-xs text-brand-dark/40"><MapPin className="w-3 h-3" />{listing.location}</span>}
+                                        <span className={`px-2 py-0.5 rounded-full text-xs ${statusColors[listing.status] || statusColors.active}`}>{listing.status}</span>
+                                    </div>
                                 </div>
                             </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-        </main>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                                <Link href={`/listing/${listing.id}`} className="w-9 h-9 bg-brand-light rounded-lg flex items-center justify-center hover:bg-brand-dark/5 transition-colors" title="View">
+                                    <Eye className="w-4 h-4 text-brand-dark" />
+                                </Link>
+                                <button onClick={() => deleteListing(listing.id)} className="w-9 h-9 bg-red-50 rounded-lg flex items-center justify-center hover:bg-red-100 transition-colors" title="Delete">
+                                    <Trash2 className="w-4 h-4 text-red-500" />
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
     )
 }

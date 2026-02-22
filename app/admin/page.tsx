@@ -83,7 +83,7 @@ export default function AdminPage() {
   const statCards = [
     {
       title: 'Total Revenue',
-      value: `$${stats.totalPayments.toLocaleString()}`,
+      value: `₵${stats.totalPayments.toLocaleString()}`,
       icon: DollarSign,
       color: 'bg-green-50 text-green-600',
     },
@@ -108,7 +108,7 @@ export default function AdminPage() {
   ]
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen pt-20">
       <AdminSidebar />
 
       <main className="flex-1 bg-brand-light p-8">
